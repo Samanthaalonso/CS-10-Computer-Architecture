@@ -1,0 +1,106 @@
+﻿Source Code:
+# Program Header
+# Author: Samantha Alonso
+# Date: May 21st, 2024
+# Program: Encryption 
+
+
+.data
+message: .asciiz "This is a Plaintext message."
+key:     .asciiz "AGZmy#4"
+encMsg:  .space 100   # Allocate space for the encrypted message
+decMsg:  .space 100   # Allocate space for the decrypted message
+newline: .asciiz "\n"
+
+
+.text
+.globl main
+main:
+    la $a0, message    # Load address of the message into $a0
+    la $a1, key        # Load address of the key into $a1
+    la $a2, encMsg     # Address for storing encrypted message
+    la $a3, decMsg     # Address for storing decrypted message
+
+
+    # Calculate the length of the key
+    li $t6, 0          # Key length counter
+count_key_length:
+    lb $t5, 0($a1)     # Load byte from key
+    beqz $t5, encrypt  # If byte is zero, end of string
+    addiu $a1, $a1, 1  # Increment address of key
+    addiu $t6, $t6, 1  # Increment key length
+    j count_key_length
+
+
+encrypt:
+    la $a1, key        # Reset key address for encryption
+    li $t1, 0          # Reset key index
+    li $t0, 0          # Reset message index
+
+
+encryption_loop:
+    lb $t2, 0($a0)     # Load byte from message
+    beqz $t2, finish_encryption  # If byte is zero, end of message
+    lb $t3, 0($a1)     # Load byte from key
+    xor $t4, $t2, $t3  # XOR message byte and key byte
+    sb $t4, 0($a2)     # Store encrypted byte
+    addiu $a0, $a0, 1  # Increment message pointer
+    addiu $a2, $a2, 1  # Increment encrypted message pointer
+    addiu $t1, $t1, 1  # Increment key index
+    bge $t1, $t6, reset_key_index_enc # If key index equals key length, reset
+    addiu $a1, $a1, 1  # Increment key pointer
+    j encryption_loop
+
+
+reset_key_index_enc:
+    la $a1, key        # Reset key address
+    li $t1, 0          # Reset key index
+    j encryption_loop
+
+
+finish_encryption:
+    la $a0, encMsg     # Set pointer to start of encrypted message
+    la $a1, key        # Reset key address
+    la $a2, decMsg     # Address for storing decrypted message
+    li $t1, 0          # Reset key index
+
+
+decryption_loop:
+    lb $t2, 0($a0)     # Load encrypted byte
+    beqz $t2, output   # If byte is zero, end of encrypted message
+    lb $t3, 0($a1)     # Load byte from key
+    xor $t4, $t2, $t3  # XOR encrypted byte and key byte
+    sb $t4, 0($a2)     # Store decrypted byte
+    addiu $a0, $a0, 1  # Increment encrypted message pointer
+    addiu $a2, $a2, 1  # Increment decrypted message pointer
+    addiu $t1, $t1, 1  # Increment key index
+    bge $t1, $t6, reset_key_index_dec # If key index equals key length, reset
+    addiu $a1, $a1, 1  # Increment key pointer
+    j decryption_loop
+
+
+reset_key_index_dec:
+    la $a1, key        # Reset key address
+    li $t1, 0          # Reset key index
+    j decryption_loop
+
+
+output:
+    # Print Encrypted Message
+    la $a0, encMsg     # Load address of the encrypted message
+    li $v0, 4          # System call for print_string
+    syscall            # Make syscall to print the encrypted message
+
+
+    la $a0, newline    # Print newline
+    syscall
+
+
+    # Print Decrypted Message
+    la $a0, decMsg     # Load address of the decrypted message
+    syscall            # Make syscall to print the decrypted message
+
+
+    # Exit the program
+    li $v0, 10         # System call for exit
+    syscall            # Make syscall to exit
