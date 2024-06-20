@@ -1,0 +1,174 @@
+﻿Source Code:
+# Program Header
+# Author: Samantha Alonso
+# Date: June 5th, 2024
+# Program: Recursion GCD
+
+
+.data
+    array_x:  .word 24, 13, 432, 30, 56, 330, 63
+    array_y:  .word 4, 7, 226, 24, 7, 9
+    array_z:  .space 28  # Space for 7 results (4 bytes each)
+    len: .word 7
+
+
+    result_msg:  .asciiz "GCD Result: "
+    match_msg:  .asciiz "Matching Elements Count: "
+    newline:     .asciiz "\n"
+.text
+.globl main
+
+
+main:
+    la $t2, array_x        # Load address of array_x
+    la $t3, array_y        # Load address of array_y
+    la $t4, array_z        # Load address of array_z
+    lw $t5, len            # Load the length of arrays
+    li $t6, 0              # Initialize loop counter
+
+
+gcd_loop:
+    sub $t7, $t5, $t6      # Calculate difference
+    slt $t8, $zero, $t7    # Set $t8 to 1 if $t7 > 0
+    beq $t8, $zero, end_loop # If $t8 == 0, exit loop
+
+
+    lw $t0, 0($t2)         # Load xi from array_x into $t0
+    lw $t1, 0($t3)         # Load yi from array_y into $t1
+
+
+    # Store parameters in $a0 and $a1 to follow MIPS calling convention
+    move $a0, $t0
+    move $a1, $t1
+
+
+    jal gcd                # Call GCD function
+
+
+    sw $v0, 0($t4)         # Store the result in array_z
+
+
+    # Display the GCD result
+    li $v0, 4
+    la $a0, result_msg
+    syscall
+
+
+    li $v0, 1
+    lw $a0, 0($t4)
+    syscall
+
+
+    li $v0, 4
+    la $a0, newline
+    syscall
+
+
+    # Update addresses for arrays
+    addi $t2, $t2, 4
+    addi $t3, $t3, 4
+    addi $t4, $t4, 4
+
+
+    addi $t6, $t6, 1       # Increment loop counter
+    j gcd_loop             # Continue loop
+
+
+end_loop:
+    # Call procedure 2 to count matching elements
+    la $a0, array_y
+    la $a1, array_z
+    lw $a2, len
+    jal proc2
+
+
+    # Display the count of matching elements
+    li $v0, 4
+    la $a0, match_msg
+    syscall
+    li $v0, 1
+    move $a0, $v0
+    syscall
+    li $v0, 4
+    la $a0, newline
+    syscall
+
+
+    li $v0, 10             # Exit
+    syscall
+
+
+# Procedure: GCD using Euclid's algorithm (recursive)
+gcd:
+    addi $sp, $sp, -12     # Make space on the stack
+    sw $ra, 8($sp)         # Save return address
+    sw $a0, 4($sp)         # Save $a0
+    sw $a1, 0($sp)         # Save $a1
+
+
+    # Check if $a1 == 0 without conditional branches
+    xor $t9, $a1, $zero    # $t9 = $a1 XOR 0
+    slt $t8, $zero, $t9    # Set $t8 to 1 if $t9 > 0
+    beq $t8, $zero, gcd_base # If $t8 == 0, jump to gcd_base
+
+
+    rem $t0, $a0, $a1      # $t0 = $a0 % $a1
+    move $a0, $a1          # $a0 = $a1
+    move $a1, $t0          # $a1 = $t0
+    jal gcd                # Recursive call
+
+
+    lw $a1, 0($sp)         # Restore $a1
+    lw $a0, 4($sp)         # Restore $a0
+    lw $ra, 8($sp)         # Restore return address
+    addi $sp, $sp, 12      # Restore stack pointer
+    jr $ra
+
+
+gcd_base:
+    move $v0, $a0          # If $a1 == 0, return $a0
+    lw $a1, 0($sp)         # Restore $a1
+    lw $a0, 4($sp)         # Restore $a0
+    lw $ra, 8($sp)         # Restore return address
+    addi $sp, $sp, 12      # Restore stack pointer
+    jr $ra
+
+
+# Procedure 2: Count matching elements
+proc2:
+    addi $sp, $sp, -8      # Make space on the stack
+    sw $ra, 4($sp)         # Save return address
+    sw $a0, 0($sp)         # Save $a0
+    move $t0, $zero        # Initialize count to 0
+
+
+proc2_loop:
+    beq $a2, $zero, proc2_end # If length == 0, end loop
+
+
+    lw $t1, 0($a0)         # Load value from array_y
+    lw $t2, 0($a1)         # Load value from array_z
+    sub $t3, $t1, $t2      # Compare values
+    beq $t3, $zero, proc2_match # If $t3 == 0, they match
+
+
+    j proc2_continue       # If not matched, continue
+
+
+proc2_match:
+    addi $t0, $t0, 1       # Increment count
+
+
+proc2_continue:
+    addi $a0, $a0, 8       # Move to next element in array_y (double-word = 8 bytes)
+    addi $a1, $a1, 8       # Move to next element in array_z (double-word = 8 bytes)
+    subi $a2, $a2, 1       # Decrement length
+    j proc2_loop           # Continue loop
+
+
+proc2_end:
+    move $v0, $t0          # Return count in $v0
+    lw $a0, 0($sp)         # Restore $a0
+    lw $ra, 4($sp)         # Restore return address
+    addi $sp, $sp, 8       # Restore stack pointer
+    jr $ra
