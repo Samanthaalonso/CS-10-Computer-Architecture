@@ -1,0 +1,120 @@
+﻿Source Code:
+# Program Header
+# Author: Samantha Alonso
+# Date: May 28th, 2024
+# Program: GCD Algorithm
+
+
+.data
+prompt1: .asciiz "Enter the first integer: "
+prompt2: .asciiz "Enter the second integer: "
+result: .asciiz "The GCD of these numbers is: "
+newline: .asciiz "\n"
+
+
+.text
+.globl main
+
+
+# Main function
+main:
+    li $t6, 0  # Counter for the loop to run 3 times
+
+
+loop:
+    bge $t6, 3, exit  # Exit loop after 3 iterations
+
+
+    # Print prompt for the first integer
+    li $v0, 4
+    la $a0, prompt1
+    syscall
+
+
+    # Read first integer
+    li $v0, 5
+    syscall
+    move $t0, $v0  # $t0 = x
+
+
+    # Print prompt for the second integer
+    li $v0, 4
+    la $a0, prompt2
+    syscall
+
+
+    # Read second integer
+    li $v0, 5
+    syscall
+    move $t1, $v0  # $t1 = y
+
+
+    # Ensure $t0 is the larger number
+    bge $t0, $t1, skip_swap
+    move $t2, $t0
+    move $t0, $t1
+    move $t1, $t2
+
+
+skip_swap:
+    # Calculate GCD
+    jal gcd
+    move $t3, $v0  # Store result of GCD in $t3
+
+
+    # Print result
+    li $v0, 4
+    la $a0, result
+    syscall
+
+
+    move $a0, $t3
+    li $v0, 1
+    syscall
+
+
+    # Print newline
+    li $v0, 4
+    la $a0, newline
+    syscall
+
+
+    addi $t6, $t6, 1  # Increment counter
+    j loop
+
+
+# Function to calculate the GCD
+gcd:
+    # Ensure x and y are positive
+    bgez $t0, x_positive
+    negu $t0, $t0
+
+
+x_positive:
+    bgez $t1, y_positive
+    negu $t1, $t1
+
+
+y_positive:
+    move $t4, $t0  # $t4 = x
+    move $t5, $t1  # $t5 = y
+
+
+gcd_loop:
+    beqz $t5, gcd_done  # If y is 0, we are done
+    div $t4, $t5
+    mfhi $t7          # $t7 = x % y
+    move $t4, $t5     # x = y
+    move $t5, $t7     # y = x % y
+    j gcd_loop
+
+
+gcd_done:
+    move $v0, $t4  # Return x as the GCD
+    jr $ra
+
+
+# Exit point
+exit:
+    li $v0, 10
+    syscall
