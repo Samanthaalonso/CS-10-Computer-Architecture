@@ -1,0 +1,70 @@
+﻿Source Code:
+# Program Header
+# Author: Samantha Alonso
+# Date: May 16th, 2024
+# Program: Fibonacci sequence 
+
+
+.data
+prompt_msg: .asciiz "Enter the number of terms: "
+output_msg: .asciiz "Fibonacci sequence: "
+space: .asciiz " "   # Space string for printing
+newline: .asciiz "\n" # Newline string for clearer output
+
+
+.text
+main:
+    la $a0, prompt_msg  # Load address of prompt message into $a0
+    li $v0, 4           # System call for printing string
+    syscall             # Print prompt message
+
+
+    li $v0, 5           # System call for reading integer
+    syscall             # Read number of terms from user and store in $v0
+
+
+    move $t0, $v0       # Move number of terms to $t0
+
+
+    li $t1, 0           # Initialize first Fibonacci number (0) in $t1
+    li $t2, 1           # Initialize second Fibonacci number (1) in $t2
+
+
+    la $a0, output_msg  # Load address of output message into $a0
+    li $v0, 4           # System call for printing string
+    syscall             # Print "Fibonacci sequence: "
+
+
+loop:
+    beqz $t0, exit      # Exit if number of terms is 0
+
+
+    move $a0, $t1       # Move current Fibonacci number to $a0
+    li $v0, 1           # System call for printing integer
+    syscall             # Print Fibonacci number
+
+
+    la $a0, space       # Load address of space string into $a0
+    li $v0, 4           # System call for printing string
+    syscall             # Print space
+
+
+    add $t3, $t1, $t2   # Calculate the next Fibonacci number
+    move $t1, $t2       # Shift $t1 and $t2 by one position
+    move $t2, $t3       # Update $t2 with the new Fibonacci number
+
+
+    subi $t0, $t0, 1    # Decrement number of terms remaining
+
+
+    j loop              # Jump back to the loop
+
+
+exit:
+    la $a0, newline     # Load address of newline string for final formatting
+    li $v0, 4           # System call for printing string
+    syscall             # Print final newline
+
+
+    li $v0, 10          # System call for exiting program
+    syscall             # Exit program
