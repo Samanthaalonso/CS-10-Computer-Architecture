@@ -1,0 +1,73 @@
+﻿Source Code:
+# Program Header
+# Author: Samantha Alonso
+# Date: June 12th, 2024
+# Program: Longest Increasing Sequence Finder
+
+
+.data
+myArray:      .word -5, 10, 20, 14, 17, 26, 42, 22, 19, -5   # The array of integers
+myArrayLength: .word 10                                      # Length of the array
+
+
+.text
+.globl main
+main:
+    la $t0, myArray         # Load base address of the array into $t0
+    lw $t1, myArrayLength   # Load the length of the array into $t1
+    li $t2, 1               # Initialize current sequence length
+    li $t3, 1               # Initialize max sequence length
+
+
+    li $t4, 0               # Index variable
+    li $t5, 1               # Next index to compare
+
+
+loop:
+    # Check if loop should continue
+    bge $t5, $t1, end_loop
+
+
+    # Load current and next elements of the array
+    lw $t6, 0($t0)
+    lw $t7, 4($t0)
+
+
+    # Compare current element with next element
+    slt $t8, $t6, $t7       # $t8 = 1 if $t6 < $t7
+
+
+    # Continue current sequence or reset
+    beq $t8, $0, reset_current_length
+    addi $t2, $t2, 1        # Increment current sequence length
+    j check_max_length
+
+
+reset_current_length:
+    li $t2, 1               # Reset current length to 1
+
+
+check_max_length:
+    # Check if current sequence is the longest
+    slt $t9, $t3, $t2       # $t9 = 1 if max length < current length
+    beq $t9, $0, update_indexes
+    move $t3, $t2           # Update max length to current length
+
+
+update_indexes:
+    # Prepare for next iteration
+    addi $t0, $t0, 4        # Move to the next element in array
+    addi $t4, $t4, 1        # Increment index
+    addi $t5, $t5, 1        # Increment comparison index
+    j loop
+
+
+end_loop:
+    # Output the result stored in $t3, which is the max sequence length
+    li $v0, 1              # Print integer syscall
+    move $a0, $t3          # Move length to syscall argument
+    syscall
+
+
+    li $v0, 10             # Exit syscall
+    syscall
